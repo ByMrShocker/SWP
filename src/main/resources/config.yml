@@ -1,0 +1,51 @@
+Global:
+  test: 3
+  magMaterial: BONE
+  weaponMaterial: STICK
+  nullItemName: "пусто"
+
+
+weapons:
+  ak47:
+    cal: 762x39
+    soundShot: swd.ak47_shoot
+    soundReload: swd.ak47_reload
+    firingMode: 1 //сделай сука одиночный
+    durability: 500
+    burst: 3
+    burstPeriod: 5
+    burstCD: 3
+    reloadTime: 10
+    name: AK 47
+    lore:
+      - test
+      - test2
+
+ammo:
+  762x39:
+    762x39PS:
+      name: "7.62x39 ПС"
+      damage0: 12
+      damage2: 10
+      damage3: 8
+      damage4: 2
+      damage5: 1
+
+
+mag:
+  6l10:
+    name: '&#ffff00Магазин 6Л10 на 30 патронов'
+    lore:
+      - '&fЗаряжено: &6%swd_ammo%'
+      - '&fПатрон: &6%swd_ammoTypeName%'
+      - ''
+      - '&f30-ти зарядный магазин 6Л10 из прессматериала АГ-4С, под патрон'
+      - '&f7.62x39 для АК и совместимых. Также может быть снабжен патронами .366'
+      - '&fТКМ для использования с совместимым оружием.'
+    modelData: 32
+    cal: 762x39
+    capacity: 30
+
+
+saved:
+  lastSN: 300

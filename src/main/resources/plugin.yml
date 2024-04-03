@@ -1,0 +1,12 @@
+name: ShockerWeaponsPlugin
+version: '${project.version}'
+main: bymrshocker.swp.ShockerWeaponsPlugin
+api-version: '1.20'
+commands:
+  swd:
+    description: SWD stuff
+    usage: /swd
+    aliases: [swd, shockerweapons]
+    permission: swd.admin
+    permission-message: You do not have permission to use that.
+
