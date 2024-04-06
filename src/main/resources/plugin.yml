@@ -5,8 +5,7 @@ api-version: '1.20'
 commands:
   swd:
     description: SWD stuff
-    usage: /swd
-    aliases: [swd, shockerweapons]
+    usage: /<command>
     permission: swd.admin
     permission-message: You do not have permission to use that.
 

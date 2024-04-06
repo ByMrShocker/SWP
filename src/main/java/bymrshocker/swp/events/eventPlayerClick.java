@@ -75,12 +75,15 @@ public class eventPlayerClick implements Listener {
         if (plugin.getFunctionLibrary().isWeapon(event.getItem())) {
             SWeapon sWeapon = new SWeapon();
             sWeapon.playerRightClick(event, plugin);
+        } else if (plugin.getFunctionLibrary().isMag(event.getItem())) {
+            plugin.getFunctionLibrary().tryAddAmmo(event.getPlayer());
         }
 
     }
 
     private void OnPlayerLeftClick(PlayerInteractEvent event) {
       //  Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tellraw @a {\"text\":\"ВЛАДУСМАН ХУЙЛО\",\"color\":\"light_purple\"}");
+
 
         if (plugin.getFunctionLibrary().isWeapon(event.getItem())) {
             SWeapon sWeapon = new SWeapon();

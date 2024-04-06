@@ -9,11 +9,15 @@ import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.title.Title;
+import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.*;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.type.Bed;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Parrot;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
@@ -87,12 +91,11 @@ public class SWeapon {
     }
 
 
-
-    public void updateDisplayInfo(Player player) {
-
+    public void weaponReloadSound(Player player, int step) {
+        String weaponID = plugin.getFunctionLibrary().getItemNBTString(getSelectedItem(player), "weaponID");
+        String sound = plugin.getConfigWeaponString(weaponID, "soundReload" + String.valueOf(step));
+        player.playSound(player.getLocation(), sound, SoundCategory.PLAYERS, 1, 1);
     }
-
-
 
 
     private void weaponReload(Player player) {
@@ -105,7 +108,7 @@ public class SWeapon {
 
         prevMag = plugin.getFunctionLibrary().getItemNBTString(getSelectedItem(player), "mag");
 
-        inventoryCheckResult inventoryCheckResult = findMagInventory(player, cal, false);
+        inventoryCheckResult inventoryCheckResult = findMagInventory(player, cal, false, -99);
 
         newMag = inventoryCheckResult.magID;
 
@@ -120,12 +123,12 @@ public class SWeapon {
     }
 
 //разрядить магазин и выдать
-    public void weaponRemoveMag(Player player, String oldMag) {
+    public int weaponRemoveMag(Player player, String oldMag) {
 
         //("weaponRemoveMag");
 
-        if (oldMag == null || oldMag.equals("null")) return;
-        if (plugin.getFunctionLibrary().getItemNBTString(getSelectedItem(player),"mag").equals("null")) return;
+        if (oldMag == null || oldMag.equals("null")) return -1;
+        if (plugin.getFunctionLibrary().getItemNBTString(getSelectedItem(player),"mag").equals("null")) return -1;
 
         String ammoType = plugin.getFunctionLibrary().getItemNBTString(getSelectedItem(player), "ammoType");
         String cal = plugin.getConfigMagString(oldMag, "cal");
@@ -172,19 +175,23 @@ public class SWeapon {
 
         if (newslot != -1) {
             player.getInventory().setItem(newslot, itemToGive);
+            return newslot;
         }
         else {
         player.getWorld().dropItemNaturally(player.getLocation(), itemToGive);
         }
+        return -1;
         //player.getInventory().addItem(itemToGive);
     }
 
-    public boolean weaponInsertMag(String newMag, Player player, String cal) {
+    public boolean weaponInsertMag(String newMag, Player player, String cal, int oldmagslot) {
 
         //System.out.println("weaponInsertMag");
-        inventoryCheckResult inventoryCheckResult = findMagInventory(player, cal, true);
+        inventoryCheckResult inventoryCheckResult = findMagInventory(player, cal, true, oldmagslot);
         String removedMag = inventoryCheckResult.magID;
         loadDataFromMag(inventoryCheckResult.item, player);
+
+        if (inventoryCheckResult.item == null) return false;
 
         if (inventoryCheckResult.item.getAmount() > 0) {
 
@@ -235,6 +242,7 @@ public class SWeapon {
         Inventory inv = player.getInventory();
 
         for(int i = 0; i <= 35; i++) {
+
             ItemStack item = inv.getItem(i);
 
             if (item == null) {
@@ -250,10 +258,7 @@ public class SWeapon {
 
 
 
-
-
-
-    private inventoryCheckResult findMagInventory(Player player, String cal, boolean removeItem){
+    private inventoryCheckResult findMagInventory(Player player, String cal, boolean removeItem, int ignoreSlot){
 
         Inventory inv = player.getInventory();
         String material = plugin.getConfig().getConfigurationSection("Global").getString("magMaterial");
@@ -262,6 +267,8 @@ public class SWeapon {
 
 
         for(int i = 0; i < inv.getSize(); i++) {
+            if (i == ignoreSlot) continue;
+
             ItemStack item = inv.getItem(i);
 
             if (item != null) {
@@ -317,7 +324,9 @@ public class SWeapon {
     public void weaponFire(Player player){
         //plugin.getFunctionLibrary().executeConsoleCommand("say FIRE");
         weaponRaycast(player);
-        player.getWorld().playSound(player.getLocation(), "minecraft:swd.ak47_shoot", 1, 1);
+        player.getWorld().playSound(player.getLocation(), "minecraft:swd.ak47_shoot", SoundCategory.PLAYERS, 1, 1);
+
+
 
     }
 
@@ -344,7 +353,7 @@ public class SWeapon {
         if (hitResult != null) {
             if (hitResult.getHitBlock() != null) {
 
-                Location hitLocation = hitResult.getHitBlock().getLocation();
+                Location hitLocation = hitResult.getHitPosition().toLocation(player.getWorld());
                 weaponRaycastHitBlock(player, hitLocation, hitResult.getHitBlock().getBlockData());
 
             } else if (hitResult.getHitEntity() != null) {
@@ -362,18 +371,16 @@ public class SWeapon {
     private void weaponRaycastHitBlock(Player player, Location hitLocation, BlockData blockData) {
 
 
-        Location location = hitLocation;
-        location.add(0.5, 0.5, 0.5);
+        //Location location = hitLocation;
+        //location.add(-0.5, -0.5, -0.5);
 
-        Vector direction = new Vector(0, 0, 0);
-
-
-        direction = player.getEyeLocation().toVector().subtract(hitLocation.toVector());
-        direction.normalize();
-        location.add(direction);
+        //Vector direction = new Vector(0, 0, 0);
+        //direction = player.getEyeLocation().toVector().subtract(hitLocation.toVector());
+        //direction.normalize();
+        //location.add(direction);
 
 
-        player.getWorld().spawnParticle(Particle.BLOCK_CRACK, location, 10, blockData);
+        player.getWorld().spawnParticle(Particle.BLOCK_CRACK, hitLocation, 10, blockData);
 
 
     }
@@ -427,11 +434,25 @@ public class SWeapon {
 
         Location startLocation = player.getLocation();
 
+        Vector startOffset = plugin.getConfig().getConfigurationSection("Global").getVector("bulletParticleOffset");
+
+
         Location eyeLocation = player.getEyeLocation();
 
-        //endLocation.getWorld().spawnParticle(Particle.FLAME, startLocation, eyeLocation.blockX(), eyeLocation.blockY(), eyeLocation.blockZ(), 0.001);
+        Vector direction = eyeLocation.getDirection().normalize();
 
-        plugin.getFunctionLibrary().executeConsoleCommand("execute at " + player.getName() + " anchored eyes positioned ~ ~1.5 ~ run particle minecraft:flame ^-0.3 ^ ^1 ^ ^ ^10000 0.005 0");
+        Location offsetLocation = plugin.getFunctionLibrary().getRelativeLocation(player, eyeLocation, startOffset);
+        
+        String particleName = plugin.getConfig().getConfigurationSection("Global").getString("bulletParticle");
+        double speed = plugin.getConfig().getConfigurationSection("Global").getDouble("bulletParticleSpeed");
+
+        player.spawnParticle(Particle.valueOf(particleName), offsetLocation, 0, direction.getX() * speed, direction.getY() * speed, direction.getZ() * speed);
+
+
+        //player.spawnParticle(Particle.FLAME, startLocation, 1, direction.getX(), direction.getY(), direction.getZ(), 0);
+
+
+        //player.spawnParticle(Particle.FLAME, player.getEyeLocation().add(0, 1.5, 0), 1, 0, 0, 0,5);
 
         ///execute as @p at @s anchored eyes run particle minecraft:flame ~ ~1 ~ ^ ^ ^10000 0.001 0
 
@@ -454,6 +475,7 @@ public class SWeapon {
     }
 
     public boolean isFirePossible(Player player) {
+        if (!plugin.getFunctionLibrary().isWeapon(player.getInventory().getItemInMainHand())) return false;
         if (plugin.getFunctionLibrary().getItemNBTInt(player.getInventory().getItemInMainHand(), "durability") <= 0) return false;
         if (plugin.getFunctionLibrary().getItemNBTInt(player.getInventory().getItemInMainHand(), "ammo") <= 0) return false;
         if (player.isDead()) return false;
@@ -461,19 +483,13 @@ public class SWeapon {
 
     }
 
-    public void fireEndReason(Player player) {
-        UFunctionLibrary funcLib = plugin.getFunctionLibrary();
-        if (funcLib.getItemNBTInt(player.getInventory().getItemInMainHand(), "durability") <= 0) funcLib.executeConsoleCommand("say durability <= 0");
-        if (plugin.getFunctionLibrary().getItemNBTInt(player.getInventory().getItemInMainHand(), "ammo") <= 0) funcLib.executeConsoleCommand("say noAmmo");
-
-
-
-    }
-
 
 
     public void onFireInterrupted(Player player){
-        fireEndReason(player);
+
+        String soundname = plugin.getConfig().getConfigurationSection("Global").getString("noAmmoSound");
+
+        player.playSound(player.getLocation(), soundname, 1, 1);
     }
 
 
@@ -483,7 +499,7 @@ public class SWeapon {
     private void loadWeaponData(String weaponID, ShockerWeaponsPlugin plugin) {
         FileConfiguration config = plugin.getConfig();
         this.weaponID = weaponID;
-        this.reqAmmoType = config.getString("weapons." + weaponID + ".reqAmmoType");
+        this.reqAmmoType = plugin.getConfig().getString("weapons." + weaponID + ".reqAmmoType");
     }
 
 
@@ -517,6 +533,8 @@ public class SWeapon {
 
 
     public boolean isStillHolding(Player player){
+        if (player.getInventory().getItemInMainHand() == null) return false;
+        if (!plugin.getFunctionLibrary().isWeapon(player.getInventory().getItemInMainHand())) return false;
         if (player.getInventory().getHeldItemSlot() != slotID) {
             //System.out.println("IsStillHolding: False. SlotID");
             return false;

@@ -2,34 +2,51 @@ Global:
   test: 3
   magMaterial: BONE
   weaponMaterial: STICK
-  nullItemName: "пусто"
-
+  ammoMaterial: GHAST_TEAR
+  nullItemName: пусто
+  noAmmoSound: swd.noammo
+  bulletParticle: FLAME
+  bulletParticleSpeed: 1.3
+  bulletParticleOffset:
+    ==: Vector
+    x: 0.0
+    y: 0.0
+    z: -0.4
 
 weapons:
   ak47:
+    name: "&6AK-47"
+    lore:
+      - "test"
+      - "test2"
     cal: 762x39
     soundShot: swd.ak47_shoot
-    soundReload: swd.ak47_reload
+    soundReload0: swd.ak47_reload
+    soundReload1: swd.ak47_reload
     firingMode: 1 //сделай сука одиночный
+    modelData: 22
     durability: 500
     burst: 3
     burstPeriod: 5
     burstCD: 3
     reloadTime: 10
-    name: AK 47
-    lore:
-      - test
-      - test2
 
 ammo:
   762x39:
     762x39PS:
-      name: "7.62x39 ПС"
+      name: "&#ffff007.62x39 ПС гж"
+      lore:
+        - "&fПатрон с пулей массой 7,9 грамм с термоупрочненным стальным сердечником,"
+        - "&fплакированной томпаком оболочкой, в биметаллической гильзе."
+        - "&fБлагодаря сердечнику из закаленной стали, пуля имеет хорошую пробивную"
+        - "&fспособность против брони базового и среднего уровня защиты"
+      modelData: 22
       damage0: 12
       damage2: 10
       damage3: 8
       damage4: 2
       damage5: 1
+      armorDamage: 5
 
 
 mag:

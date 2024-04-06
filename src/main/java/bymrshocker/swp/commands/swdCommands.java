@@ -21,47 +21,97 @@ import java.util.Set;
 public class swdCommands implements CommandExecutor {
 
     final public ShockerWeaponsPlugin plugin;
+    private Player player;
+    private String[] args;
 
     public swdCommands(ShockerWeaponsPlugin pluginInstance) {
         this.plugin = pluginInstance;
     }
 
     @Override
-    public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
+    public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
+        String[] args = strings;
         if (commandSender instanceof Player) {
-            Player player = (Player) commandSender;
-
-            if (command.getName().equalsIgnoreCase("swd")) {
-                selectCommand(commandSender, command, s, strings);
+            if (command.getName().equalsIgnoreCase("swd") && args.length > 0) {
+                player = (Player) commandSender;
+                args = strings;
+                String arg = args[0];
+                switchcommand(arg);
             }
-
+            else displayMessage("&lVladusman лох");
         }
         return true;
     }
 
-
-    private void selectCommand(CommandSender sender, Command command, String s, String[] strings) {
-
-        boolean result = false;
-
-        if (strings.length == 0) return;
-
-        System.out.println(strings.length);
-
-        switch (strings[0]) {
-            case "mag": result = givemag(sender, strings);
-            case "weapon": result = giveweapon(sender, strings);
+    private void switchcommand(String arg){
+        switch (arg) {
+            default: {
+                displayMessage("&cInvalid arguments! &fArguments: &e[give, list, test]");
+                break;
+            }
+            case "give": {
+                give();
+                displayMessage("give command end");
+                break;
+            }
+            case "list": {
+                list();
+                break;
+            }
+            case "test": {
+                test();
+                break;
+            }
         }
     }
 
-    private boolean givemag(CommandSender sender, String[] args){
 
-        //if (args.length != 2) {
-        //    String id = plugin.getConfig().getConfigurationSection("mag").getString(args[1]);
-        //    //plugin.getConfigMagString(args[1], "name")
-        //}
-        return false;
+
+    private void test(){
+        displayMessage("&lVladusman лох кста");
     }
+
+
+    private void give(){
+
+        displayMessage("give command");
+        ItemStack item = new ItemStack(Material.BAMBOO_BLOCK);
+        player.getInventory().addItem(item);
+        displayMessage("give command1");
+
+    }
+
+    private void list(){
+        System.out.println("list command");
+        if (args.length == 1) {
+            System.out.println("list command args.length == 1");
+            displayMessage(displayList("weapon"));
+            displayMessage(displayList("ammo"));
+            displayMessage(displayList("mag"));
+            displayMessage("list return 1");
+            return;
+        }
+        String arg = args[1];
+        System.out.println("list command args.length != 1");
+        if (arg == "weapon") displayMessage(displayList("weapon"));
+        displayMessage("list return 2");
+        System.out.println("list command end");
+
+    }
+
+    private String displayList(String string){
+        //if (plugin.getConfig().getConfigurationSection(string) != null) return "ERROR";
+        //String toshow = plugin.getConfig().getConfigurationSection(string).getKeys(false).toArray().toString();
+        //System.out.println(toshow);
+        //return toshow;
+        return "none";
+    }
+
+    private void displayMessage(String string){
+        player.sendMessage(LegacyComponentSerializer.legacy('&').deserialize("&6[SWD] &f" + string).decoration(TextDecoration.ITALIC, false));
+
+    }
+
 
     private boolean giveweapon(CommandSender sender, String[] args) {
         if (args.length != 2) {
