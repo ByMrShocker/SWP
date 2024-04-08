@@ -6,7 +6,7 @@ Global:
   nullItemName: пусто
   noAmmoSound: swd.noammo
   bulletParticle: FLAME
-  bulletParticleSpeed: 1.3
+  bulletParticleSpeed: 10
   bulletParticleOffset:
     ==: Vector
     x: 0.0
@@ -30,6 +30,8 @@ weapons:
     burstPeriod: 5
     burstCD: 3
     reloadTime: 10
+    recoilV: 1
+    recoilH: 0.4
 
 ammo:
   762x39:

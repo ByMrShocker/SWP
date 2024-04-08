@@ -22,6 +22,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
@@ -30,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.function.UnaryOperator;
 
 public class SWeapon {
@@ -59,7 +61,6 @@ public class SWeapon {
         this.plugin = plugin;
         weaponItem = event.getItem();
         UFunctionLibrary functionLibrary = plugin.getFunctionLibrary();
-
         if (!canFire(event)) {
             onFireInterrupted(event.getPlayer());
             return;
@@ -71,6 +72,11 @@ public class SWeapon {
         shotsDelay = plugin.getConfigWeaponInt(weaponID, "burstPeriod");
         clickCooldown = plugin.getConfigWeaponInt(weaponID, "burstCD");
         firingMode = plugin.getConfigWeaponInt(weaponID, "firingMode");
+
+
+        //chargeCrossbow(getSelectedItem(event.getPlayer()), event.getPlayer(), true);
+        //event.getPlayer().getInventory().setItemInMainHand(event.getPlayer().getInventory().getItemInMainHand());
+
 
         functionLibrary.setItemNBTString(getSelectedItem(event.getPlayer()), event.getPlayer(), "state", "fire");
         functionLibrary.weaponFireTimer(this, event.getPlayer(), shotsPerClick, shotsDelay, 0);
@@ -84,7 +90,8 @@ public class SWeapon {
 
         if (!canReload(player)) return;
 
-
+        chargeCrossbow(getSelectedItem(player), player, false);
+        player.getInventory().setItemInMainHand(player.getInventory().getItemInMainHand());
         weaponReload(player);
         //functionLibrary.setItemNBTInt(getSelectedItem(player), player, "ammo", 30);
 
@@ -126,6 +133,9 @@ public class SWeapon {
     public int weaponRemoveMag(Player player, String oldMag) {
 
         //("weaponRemoveMag");
+
+        chargeCrossbow(getSelectedItem(player), player, false);
+        player.getInventory().setItemInMainHand(player.getInventory().getItemInMainHand());
 
         if (oldMag == null || oldMag.equals("null")) return -1;
         if (plugin.getFunctionLibrary().getItemNBTString(getSelectedItem(player),"mag").equals("null")) return -1;
@@ -209,6 +219,8 @@ public class SWeapon {
 
         plugin.getFunctionLibrary().setItemNBTString(player.getInventory().getItemInMainHand(), player, "mag", removedMag);
         //System.out.println("removedMag: " + removedMag);
+        chargeCrossbow(getSelectedItem(player), player, true);
+        player.getInventory().setItemInMainHand(player.getInventory().getItemInMainHand());
         return (removedMag.equals("null"));
 
 
@@ -325,13 +337,28 @@ public class SWeapon {
         //plugin.getFunctionLibrary().executeConsoleCommand("say FIRE");
         weaponRaycast(player);
         player.getWorld().playSound(player.getLocation(), "minecraft:swd.ak47_shoot", SoundCategory.PLAYERS, 1, 1);
-
+        weaponRecoil(player);
 
 
     }
 
 
+    private void weaponRecoil(Player player) {
 
+        float recoilV = (float) plugin.getConfig().getConfigurationSection("weapons").getConfigurationSection(weaponID).getDouble("recoilV");
+        float recoilH = (float) plugin.getConfig().getConfigurationSection("weapons").getConfigurationSection(weaponID).getDouble("recoilH");
+
+        float yaw = player.getLocation().getYaw();
+        float pitch = player.getLocation().getPitch();
+
+        Random r = new Random();
+
+        yaw = yaw + (recoilH * -1 + r.nextFloat() * (recoilH - recoilH * -1));
+        pitch = pitch + -1 * (0 + r.nextFloat() * (recoilV - 0));
+
+        player.setRotation( yaw, pitch);
+
+    }
 
     private void weaponRaycast(Player player) {
 
@@ -419,6 +446,12 @@ public class SWeapon {
         if (!plugin.getConfig().getConfigurationSection("ammo").getConfigurationSection(cal).getKeys(false).contains(ammoType)) return -2;
 
         if (armorType >= 2 && armorType <= 5) {
+
+            //тут должен быть урон по броне. TODO добавить lerp урона в зависимости от поврежденности брони
+            int damage = plugin.getConfig().getConfigurationSection("ammo").getConfigurationSection(cal).getConfigurationSection(ammoType).getInt("armorDamage");
+            armorItem = plugin.getFunctionLibrary().damageItem((Player) entity, armorItem, damage);
+            entity.getEquipment().setChestplate(armorItem);
+
             return plugin.getConfig().getConfigurationSection("ammo").getConfigurationSection(cal).getConfigurationSection(ammoType).getInt("damage" + armorType);
         }
 
@@ -505,18 +538,18 @@ public class SWeapon {
 
 
 
-    public void chargeCrossbow(ItemStack item) {
+    public void chargeCrossbow(ItemStack item, Player player, boolean charge) {
         if (item.getType() != Material.CROSSBOW) {
-            System.out.println("предмет не является CROSSBOW");
             return;
         };
 
         ReadWriteNBT nbt = NBT.itemStackToNBT(item);
-        nbt.getCompound("tag").setByte("Charged", Byte.valueOf("1"));
-        nbt.getCompound("tag").getCompoundList("ChargedProjectiles").get(0).setString("id", "minecraft:air");
-        System.out.println(nbt.getCompound("tag").getCompoundList("ChargedProjectiles").get(0));
-        item.setItemMeta(item.getItemMeta());
-        Bukkit.getPlayer("ByMrShocker").getInventory().setItemInMainHand(item);
+        if (charge) nbt.getCompound("tag").setByte("Charged", Byte.valueOf("1"));
+        else nbt.getCompound("tag").setByte("Charged", Byte.valueOf("0"));
+        //nbt.getCompound("tag").getCompoundList("ChargedProjectiles").get(0).setString("id", "minecraft:air");
+        //System.out.println(nbt.getCompound("tag").getCompoundList("ChargedProjectiles").get(0));
+        item = NBT.itemStackFromNBT(nbt);
+        player.getInventory().setItemInMainHand(item);
 
 
 //        CrossbowMeta crossbowMeta = (CrossbowMeta) item.getItemMeta();

@@ -4,7 +4,7 @@ import bymrshocker.swp.ShockerWeaponsPlugin;
 import bymrshocker.swp.commands.BaseCommandArg;
 import org.bukkit.entity.Player;
 
-public class defaultCommand implements BaseCommandArg {
+public class swd_reload implements BaseCommandArg {
 
     @Override
     public String[] getTabList(String key) {
@@ -14,24 +14,24 @@ public class defaultCommand implements BaseCommandArg {
     }
 
     @Override
-    public String getName() { return "example"; }
+    public String getName() { return "reload"; }
 
     @Override
-    public String getDescription() { return "example"; }
+    public String getDescription() { return "reloading config"; }
 
     @Override
-    public String getSyntax() { return "/swd example"; }
+    public String getSyntax() { return "/swd reload"; }
 
     @Override
     public String getPermission() {
-        return "swd.";
+        return "swd.reload";
     }
 
     @Override
     public void execute(ShockerWeaponsPlugin plugin, Player player, String[] args) {
         if (player.isValid()) {
-            //execute code
-
+            plugin.reloadConfig();
+            plugin.getFunctionLibrary().displaySystemMessage(player, "&aconfig has been reloaded.");
         }
     }
 }

@@ -3,6 +3,8 @@ package bymrshocker.swp.commands;
 import bymrshocker.swp.ShockerWeaponsPlugin;
 import bymrshocker.swp.commands.args.swd_give;
 import bymrshocker.swp.commands.args.swd_list;
+import bymrshocker.swp.commands.args.swd_reload;
+import bymrshocker.swp.commands.args.swd_sn;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -22,6 +24,8 @@ public class CommandsHandler implements TabExecutor {
         //список говна
         argCommands.add(new swd_give());
         argCommands.add(new swd_list());
+        argCommands.add(new swd_reload());
+        argCommands.add(new swd_sn());
         this.plugin = plugin;
     }
 
@@ -33,7 +37,7 @@ public class CommandsHandler implements TabExecutor {
             for (BaseCommandArg argCommand : argCommands) {
                 if (args[0].equalsIgnoreCase(argCommand.getName())) {
                     if (commandSender instanceof Player)
-                        argCommand.execute(plugin, (Player) commandSender, args);
+                        if (commandSender.hasPermission(argCommand.getPermission())) argCommand.execute(plugin, (Player) commandSender, args);
                     return true;
                 }
             }

@@ -29,6 +29,11 @@ public class swd_list implements BaseCommandArg {
     public String getSyntax() { return "/swd list"; }
 
     @Override
+    public String getPermission() {
+        return "swd.list";
+    }
+
+    @Override
     public void execute(ShockerWeaponsPlugin plugin, Player player, String[] args) {
         if (player.isValid()) {
             //execute code

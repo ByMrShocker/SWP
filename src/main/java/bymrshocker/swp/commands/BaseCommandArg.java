@@ -20,6 +20,8 @@ public interface BaseCommandArg {
 
     String getSyntax();
 
+    String getPermission();
+
     void execute (ShockerWeaponsPlugin plugin, Player player, String[] args);
 
 }

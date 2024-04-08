@@ -39,6 +39,11 @@ public class swd_give implements BaseCommandArg {
     public String getSyntax() { return "/swd give"; }
 
     @Override
+    public String getPermission() {
+        return "swd.give";
+    }
+
+    @Override
     public void execute(ShockerWeaponsPlugin plugin, Player player, String[] args) {
         if (player.isValid()) {
             //execute code
@@ -95,6 +100,7 @@ public class swd_give implements BaseCommandArg {
         nbt.getCompound("tag").getCompound("ShockerWeapons").setString("mag", "null");
         nbt.getCompound("tag").getCompound("ShockerWeapons").setInteger("ammo", 0);
         nbt.getCompound("tag").getCompound("ShockerWeapons").setInteger("durability", dur);
+        nbt.getCompound("tag").getCompound("ShockerWeapons").setInteger("SN", -1);
 
         itemToGive = NBT.itemStackFromNBT(nbt);
         ItemMeta meta = itemToGive.getItemMeta();

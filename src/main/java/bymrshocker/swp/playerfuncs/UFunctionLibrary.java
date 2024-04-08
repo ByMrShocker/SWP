@@ -2,8 +2,6 @@ package bymrshocker.swp.playerfuncs;
 
 import bymrshocker.swp.ShockerWeaponsPlugin;
 import bymrshocker.swp.data.SWeapon;
-import com.google.common.util.concurrent.AbstractScheduledService;
-import com.sun.org.apache.xalan.internal.xsltc.util.IntegerArray;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.NBTType;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
@@ -16,6 +14,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.apache.commons.lang3.ObjectUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -23,6 +22,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -30,6 +30,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.joml.Matrix4d;
 import org.w3c.dom.Text;
 
@@ -219,7 +220,7 @@ public class UFunctionLibrary {
             player = inPlayer;
             this.remainCount = inCount;
             ammo = pluginInstance.getFunctionLibrary().getItemNBTInt(weaponClass.getWeaponItem(), "ammo");
-            sn = pluginInstance.getFunctionLibrary().getSerialNumber(player);
+            sn = pluginInstance.getFunctionLibrary().getSerialNumber(player, player.getInventory().getHeldItemSlot());
 
         }
 
@@ -235,7 +236,7 @@ public class UFunctionLibrary {
             BukkitScheduler scheduler = Bukkit.getScheduler();
 
             scheduler.runTaskTimer(pluginInstance, BukkitTask -> {
-                int cursn = getSerialNumber(player);
+                int cursn = getSerialNumber(player, player.getInventory().getHeldItemSlot());
 
                 pluginInstance.getFunctionLibrary().setItemNBTInt(weaponClass.getSelectedItem(player), player, "ammo", ammo);
                 if(remainCount <= 0 || !player.isOnline() || !weaponClass.isFirePossible(player) || ammo <= 0 || sn != cursn){
@@ -303,7 +304,17 @@ public class UFunctionLibrary {
         ItemStack ammoItem = player.getInventory().getItemInOffHand();
         String materialString = pluginInstance.getConfig().getConfigurationSection("Global").getString("ammoMaterial");
 
-        if (!ammoItem.getType().toString().equalsIgnoreCase(materialString)) return;
+
+        if (!ammoItem.getType().toString().equalsIgnoreCase(materialString)) {
+            displaySystemMessage(player, "Для зарядки магазина возьмите патроны в левую руку");
+            return;
+        }
+
+        if (magItem.getAmount() > 1) {
+            displaySystemMessage(player, "&cВы не можете заряжать сразу несколько магазинов");
+            return;
+        }
+
 
         String magID = pluginInstance.getFunctionLibrary().getItemNBTString(magItem, "magID");
         String ammoID = pluginInstance.getFunctionLibrary().getItemNBTString(ammoItem, "ammoID");
@@ -371,8 +382,8 @@ public class UFunctionLibrary {
 
 
 
-    public int getSerialNumber(Player player){
-        ItemStack item = player.getInventory().getItemInMainHand();
+    public int getSerialNumber(Player player, int slot){
+        ItemStack item = player.getInventory().getItem(slot);
         int sn = getItemNBTInt(item, "SN");
 
         if (sn != -1) return sn;
@@ -381,7 +392,11 @@ public class UFunctionLibrary {
             sn = pluginInstance.getConfig().getConfigurationSection("saved").getInt("lastSN");
             sn++;
             pluginInstance.getConfig().getConfigurationSection("saved").set("lastSN", sn);
-            setItemNBTInt(item, player, "SN", sn);
+
+            ReadWriteNBT nbt = NBT.itemStackToNBT(item);
+            nbt.getCompound("tag").getCompound("ShockerWeapons").setInteger("SN", sn);
+            item = NBT.itemStackFromNBT(nbt);
+            player.getInventory().setItem(slot, item);
             pluginInstance.saveConfig();
             return sn;
         }
@@ -390,10 +405,18 @@ public class UFunctionLibrary {
     }
 
 
+    public ItemStack refreshItemLore(ItemStack item) {
+        List<String> lore = item.getLore(); //deprecated
+        ItemMeta meta = item.getItemMeta();
+        meta = setItemLore(meta, lore, item);
+        item.setItemMeta(meta);
+        return item;
+    }
 
     public ItemMeta setItemLore(ItemMeta meta, List<String> loreStrings, ItemStack itemStack) {
 
         List<Component> loreComponents = new ArrayList<>();
+        loreComponents.clear();
         for (String loreString : loreStrings) {
             //Component loreComponent = GsonComponentSerializer.gson().deserialize(loreString);
             String modifiedString = replacePlaceholders(loreString, itemStack);
@@ -410,6 +433,19 @@ public class UFunctionLibrary {
         player.sendMessage(LegacyComponentSerializer.legacy('&').deserialize("&6[SWD] &f" + string).decoration(TextDecoration.ITALIC, false));
 
     }
+
+    public ItemStack damageItem(Player player, ItemStack item, int damage) {
+        Damageable itemdmg = (Damageable) item.getItemMeta();
+        int durability = itemdmg.getDamage() + damage;
+        item.setItemMeta((ItemMeta) itemdmg);
+
+        if (durability <= 0) {
+            item.setType(Material.AIR);
+            if (player != null) player.playSound(player.getLocation(), "entity.item.break", 1, 1);
+        }
+        return item;
+    }
+
 
 
 
@@ -442,10 +478,35 @@ public class UFunctionLibrary {
                 }
             }
         }
+        string = placeholderEFTAmmo(string, nbt);
+
 
         return string;
     }
 
+
+    private String placeholderEFTAmmo(String instring, ReadWriteNBT nbt) {
+        String string = instring;
+        if (string.contains("%swd_ammoApprox%") && nbt.getCompound("tag").getCompound("ShockerWeapons") != null) {
+            int ammo = nbt.getCompound("tag").getCompound("ShockerWeapons").getInteger("ammo");
+            @NonNull String magID = nbt.getCompound("tag").getCompound("ShockerWeapons").getString("mag");
+            if (magID.equalsIgnoreCase("")) magID = nbt.getCompound("tag").getCompound("ShockerWeapons").getString("magID");
+            int capacity = pluginInstance.getConfigMagInt(magID, "capacity");
+            if (capacity == 0) return instring;
+            double percent = (double) ammo / capacity;
+            String newString = "?";
+            if (percent == 0) newString = "пуст";
+            if (percent > 0) newString = "почти пуст";
+            if (percent >= 0.3) newString = "меньше половины";
+            if (percent >= 0.4) newString = "примерно половина";
+            if (percent >= 0.6) newString = "больше половины";
+            if (percent >= 0.8) newString = "почти полон";
+            if (percent == 1) newString = String.valueOf(ammo);
+            string = string.replace("%swd_ammoApprox%", newString);
+            return string;
+        }
+        return instring;
+    }
 
 
 

@@ -42,26 +42,20 @@ public class eventPlayerClick implements Listener {
 
     }
 
+
     @EventHandler
     public void PlayerItemHeldEvent(PlayerItemHeldEvent event) {
-        if (plugin.getFunctionLibrary().isWeapon(event.getPlayer().getInventory().getItemInMainHand())) {
+        if (plugin.getFunctionLibrary().isWeapon(event.getPlayer().getInventory().getItem(event.getNewSlot()))) {
             ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
 
-            plugin.getFunctionLibrary().getSerialNumber(event.getPlayer());
+            plugin.getFunctionLibrary().getSerialNumber(event.getPlayer(), event.getNewSlot());
 
             String state = plugin.getFunctionLibrary().getItemNBTString(item, "state");
+            String mag = plugin.getFunctionLibrary().getItemNBTString(item, "mag");
 
-            if (state == "fire" || state == "reload") {
-                if (state == "fire") {
-                    plugin.getFunctionLibrary().setItemNBTString(event.getPlayer().getInventory().getItemInMainHand(), event.getPlayer(), "state", "idle");
-                }
-                if (state == "reload") {
-                    SWeapon sWeapon = new SWeapon();
-                    sWeapon.playerLeftClick(event.getPlayer(), plugin);
-                }
+            if (state.equalsIgnoreCase("fire") || state.equalsIgnoreCase("reload")) {
+                plugin.getFunctionLibrary().setItemNBTString(event.getPlayer().getInventory().getItemInMainHand(), event.getPlayer(), "state", "idle");
             }
-
-
         }
     }
 
@@ -75,8 +69,10 @@ public class eventPlayerClick implements Listener {
         if (plugin.getFunctionLibrary().isWeapon(event.getItem())) {
             SWeapon sWeapon = new SWeapon();
             sWeapon.playerRightClick(event, plugin);
+            event.setCancelled(true);
         } else if (plugin.getFunctionLibrary().isMag(event.getItem())) {
             plugin.getFunctionLibrary().tryAddAmmo(event.getPlayer());
+            event.setCancelled(true);
         }
 
     }
